@@ -11,6 +11,10 @@ import faiss
 import langchain
 import subprocess
 
+import os
+os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
+
+
 # Load custom YOLOv5 model
 yolo_model_path = "best.pt"
 yolo_detect_script = "yolov5/detect.py"
