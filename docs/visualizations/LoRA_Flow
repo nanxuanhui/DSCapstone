@@ -1,0 +1,13 @@
+// LoRA Fine-Tuning Workflow
+digraph {
+	1 [label="Base LLM (Frozen)
+(e.g., LLaMA)"]
+	2 [label="Inject LoRA Adapters
+(Low Rank Layers)"]
+	3 [label="Fine-Tune on Domain Data"]
+	4 [label="Task-Specific LLM
+(e.g., Medical Q&A)"]
+	1 -> 2 [label="LoRA Layers Inserted"]
+	2 -> 3 [label="Train Lightweight Layers"]
+	3 -> 4 [label="Generate Specialized Answers"]
+}
