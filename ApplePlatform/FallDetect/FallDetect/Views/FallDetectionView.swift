@@ -25,16 +25,8 @@ struct FallDetectionView: View {
                 // 顶部状态栏
                 VStack {
                     HStack {
-                        Button(action: {
-                            viewModel.switchCamera()
-                        }) {
-                            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.white)
-                                .padding(12)
-                                .background(Color.black.opacity(0.6))
-                                .clipShape(Circle())
-                        }
+                        // 这里可能有其他按钮，如闪光灯控制等
+                        // 但应该删除摄像头切换按钮
                         
                         Spacer()
                         
@@ -67,7 +59,7 @@ struct FallDetectionView: View {
                         }) {
                             ZStack {
                                 Circle()
-                                    .fill(viewModel.isDetecting ? Color.red : Color.white)
+                                    .fill(viewModel.isDetecting ? Color.red : Color.blue)
                                     .frame(width: 70, height: 70)
                                 
                                 if viewModel.isDetecting {

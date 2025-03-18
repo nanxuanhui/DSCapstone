@@ -10,16 +10,25 @@ import SwiftData
 import Charts
 
 struct HistoryView: View {
-    let items: [RecordItem]
-    let deleteItems: (IndexSet) -> Void
-    let addItem: () -> Void
-    
-    @Environment(\.modelContext) private var modelContext
-    @State private var selectedFilter: HistoryFilter = .all
-    @State private var showingDeleteAlert = false
-    @State private var showingStatsView = false
+    var items: [RecordItem]
+    var deleteItems: (IndexSet) -> Void
+    var addItem: () -> Void
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     var body: some View {
+        Group {
+            if horizontalSizeClass == .compact {
+                // iPhone上使用原有的列表布局
+                navigationBasedLayout
+            } else {
+                // iPad/Vision Pro上使用并排布局
+                directLayout
+            }
+        }
+    }
+    
+    // 原有的导航式布局(iPhone用)
+    var navigationBasedLayout: some View {
         NavigationView {
             VStack(spacing: 0) {
                 // 统计摘要
@@ -110,6 +119,115 @@ struct HistoryView: View {
             }
         }
     }
+    
+    // 新的直接布局(iPad/Vision Pro用)
+    var directLayout: some View {
+        HStack(spacing: 0) {
+            // 左侧类别选择区
+            VStack {
+                Text("记录类型")
+                    .font(.title2)
+                    .padding(.top)
+                
+                Button(action: {
+                    // 显示所有记录
+                }) {
+                    HStack {
+                        Image(systemName: "list.bullet")
+                        Text("所有记录")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(10)
+                }
+                
+                Button(action: {
+                    // 显示摔倒记录
+                }) {
+                    HStack {
+                        Image(systemName: "figure.fall")
+                        Text("摔倒记录")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(10)
+                }
+                
+                Button(action: {
+                    // 显示情绪记录
+                }) {
+                    HStack {
+                        Image(systemName: "heart.text.square")
+                        Text("情绪记录")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(10)
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    // 统计数据
+                }) {
+                    HStack {
+                        Image(systemName: "chart.pie")
+                        Text("统计分析")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(10)
+                }
+            }
+            .frame(width: 250)
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            
+            // 右侧内容区
+            VStack {
+                // 顶部标题和筛选
+                HStack {
+                    Text("历史记录")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Spacer()
+                    
+                    Button(action: {}) {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                            .font(.title2)
+                    }
+                    
+                    Button(action: addItem) {
+                        Image(systemName: "plus.circle")
+                            .font(.title2)
+                    }
+                }
+                .padding()
+                
+                // 记录内容直接显示为网格
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 20) {
+                        ForEach(items) { item in
+                            RecordCard(item: item)
+                                .padding(.horizontal)
+                        }
+                    }
+                    .padding()
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+    
+    @Environment(\.modelContext) private var modelContext
+    @State private var selectedFilter: HistoryFilter = .all
+    @State private var showingDeleteAlert = false
+    @State private var showingStatsView = false
     
     private var filteredItems: [RecordItem] {
         switch selectedFilter {
@@ -707,6 +825,155 @@ struct InfoRow: View {
             
             Text(value)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// 记录卡片视图
+struct RecordCard: View {
+    let item: RecordItem
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Circle()
+                    .fill(item.type == "fall" ? Color.red : Color.blue)
+                    .frame(width: 12, height: 12)
+                
+                Text(item.type == "fall" ? "摔倒记录" : "情绪记录")
+                    .font(.headline)
+                
+                Spacer()
+                
+                Text(item.timestamp.formatted(date: .numeric, time: .shortened))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Divider()
+            
+            // 显示详细内容
+            if item.type == "fall" {
+                fallRecordDetails
+            } else {
+                emotionRecordDetails
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        )
+    }
+    
+    var fallRecordDetails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let imageData = item.imageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 120)
+                    .cornerRadius(8)
+            }
+            
+            HStack {
+                Text("严重程度:")
+                    .foregroundColor(.secondary)
+                Text(getFallSeverity())
+                    .foregroundColor(getFallSeverity() == "严重" ? .red : .orange)
+            }
+            
+            Text("细节: \(item.details)")
+                .lineLimit(2)
+        }
+    }
+    
+    var emotionRecordDetails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("情绪类型:")
+                    .foregroundColor(.secondary)
+                Text(item.emotionType ?? "未知")
+                    .bold()
+            }
+            
+            HStack {
+                Text("置信度:")
+                    .foregroundColor(.secondary)
+                Text("\(Int((item.confidenceScore ?? 0.0) * 100))%")
+            }
+            
+            if let fullText = item.fullText {
+                Text("内容: \(fullText)")
+                    .lineLimit(2)
+            }
+        }
+    }
+    
+    private func getFallSeverity() -> String {
+        if let severity = item.fallSeverity {
+            return severity
+        } else if let score = item.confidenceScore {
+            if score > 0.8 {
+                return "严重"
+            } else if score > 0.5 {
+                return "中度"
+            } else {
+                return "轻微"
+            }
+        }
+        return "未知"
+    }
+}
+
+// 情绪图标组件
+struct EmotionIcon: View {
+    let emotion: String
+    
+    var body: some View {
+        Image(systemName: iconName)
+            .font(.system(size: 22))
+            .foregroundColor(iconColor)
+    }
+    
+    // 根据情绪类型返回图标名称
+    var iconName: String {
+        switch emotion.lowercased() {
+        case "高兴":
+            return "face.smiling"
+        case "悲伤":
+            return "cloud.rain"
+        case "愤怒":
+            return "flame"
+        case "焦虑":
+            return "waveform.path.ecg"
+        case "平静":
+            return "leaf"
+        case "惊讶":
+            return "exclamationmark.circle"
+        default:
+            return "questionmark.circle"
+        }
+    }
+    
+    // 根据情绪类型返回颜色
+    var iconColor: Color {
+        switch emotion.lowercased() {
+        case "高兴":
+            return .green
+        case "悲伤":
+            return .blue
+        case "愤怒":
+            return .red
+        case "焦虑":
+            return .orange
+        case "平静":
+            return .cyan
+        case "惊讶":
+            return .purple
+        default:
+            return .gray
         }
     }
 } 

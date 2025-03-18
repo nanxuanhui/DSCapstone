@@ -13,7 +13,10 @@ struct FallDetectApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .modelContainer(for: RecordItem.self)
+                #if os(visionOS)
+                .preferredColorScheme(.light) // 为Vision Pro强制使用浅色模式
+                #endif
         }
-        .modelContainer(for: [RecordItem.self])
     }
 }

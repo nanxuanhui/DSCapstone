@@ -1,6 +1,0 @@
-import SwiftData
-// 确保这里引用了正确的模块
-import FallDetect  // 或者您的模块名称
-
-// 然后使用完全限定名称
-FallDetect.RecordItem  // 而不是简单的 RecordItem 
