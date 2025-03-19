@@ -13,18 +13,13 @@ final class RecordItem {
     // 基本属性
     var id: UUID
     var timestamp: Date
-    var type: String // "fall" 或 "emotion"
+    var type: String // "fall"
     
     // 通用属性
     var details: String?
     var imageData: Data?
     var confidenceScore: Double?
     var location: String?
-    
-    // 情绪检测特有属性
-    var emotionType: String?
-    var fullText: String?
-    var audioData: Data?
     
     // 摔倒检测特有属性
     var fallSeverity: String?
@@ -38,9 +33,6 @@ final class RecordItem {
          imageData: Data? = nil,
          confidenceScore: Double? = nil,
          location: String? = nil,
-         emotionType: String? = nil,
-         fullText: String? = nil,
-         audioData: Data? = nil,
          fallSeverity: String? = nil,
          actionTaken: String? = nil,
          helpRequested: Bool = false) {
@@ -51,9 +43,6 @@ final class RecordItem {
         self.imageData = imageData
         self.confidenceScore = confidenceScore
         self.location = location
-        self.emotionType = emotionType
-        self.fullText = fullText
-        self.audioData = audioData
         self.fallSeverity = fallSeverity
         self.actionTaken = actionTaken
         self.helpRequested = helpRequested
@@ -80,26 +69,6 @@ final class RecordItem {
             fallSeverity: fallSeverity,
             actionTaken: actionTaken,
             helpRequested: helpRequested
-        )
-    }
-    
-    // 创建情绪分析记录的便捷方法
-    static func createEmotionRecord(
-        timestamp: Date = Date(),
-        details: String? = nil,
-        confidenceScore: Double? = nil,
-        emotionType: String? = nil,
-        fullText: String? = nil,
-        audioData: Data? = nil
-    ) -> RecordItem {
-        return RecordItem(
-            timestamp: timestamp,
-            type: "emotion",
-            details: details,
-            confidenceScore: confidenceScore,
-            emotionType: emotionType,
-            fullText: fullText,
-            audioData: audioData
         )
     }
 } 

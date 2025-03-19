@@ -37,14 +37,6 @@ class BackupManager {
                 itemDict["location"] = location
             }
             
-            if let emotionType = item.emotionType {
-                itemDict["emotionType"] = emotionType
-            }
-            
-            if let fullText = item.fullText {
-                itemDict["fullText"] = fullText
-            }
-            
             if let fallSeverity = item.fallSeverity {
                 itemDict["fallSeverity"] = fallSeverity
             }
@@ -55,9 +47,8 @@ class BackupManager {
             
             itemDict["helpRequested"] = item.helpRequested
             
-            // 图片和音频数据不包含在JSON中，只包含它们的存在状态
+            // 图片数据不包含在JSON中，只包含它们的存在状态
             itemDict["hasImageData"] = item.imageData != nil
-            itemDict["hasAudioData"] = item.audioData != nil
             
             return itemDict
         }
@@ -101,7 +92,7 @@ class BackupManager {
         
         let content = UNMutableNotificationContent()
         content.title = "数据备份提醒"
-        content.body = "请备份您的摔倒检测和情绪分析数据"
+        content.body = "请备份您的摔倒检测数据"
         content.sound = .default
         
         var dateComponents = DateComponents()
@@ -119,7 +110,7 @@ class BackupManager {
         }
     }
     
-    // 创建ZIP备份（包含图片和音频）
+    // 创建ZIP备份（包含图片）
     func createFullBackup(items: [RecordItem]) -> URL? {
         let tempDir = FileManager.default.temporaryDirectory
         let backupDir = tempDir.appendingPathComponent("FallDetectBackup_\(Date().timeIntervalSince1970)")
@@ -133,16 +124,11 @@ class BackupManager {
                 try jsonData.write(to: metadataURL)
             }
             
-            // 保存图片和音频数据
+            // 保存图片数据
             for item in items {
                 if let imageData = item.imageData {
                     let imageURL = backupDir.appendingPathComponent("image_\(item.id.uuidString).jpg")
                     try imageData.write(to: imageURL)
-                }
-                
-                if let audioData = item.audioData {
-                    let audioURL = backupDir.appendingPathComponent("audio_\(item.id.uuidString).m4a")
-                    try audioData.write(to: audioURL)
                 }
             }
             

@@ -19,48 +19,6 @@ class AnalyticsManager {
         return calculateFrequency(for: fallItems, timeframe: timeframe)
     }
     
-    // 分析情绪变化
-    func analyzeEmotionChanges(items: [RecordItem], timeframe: TimeFrameOption) -> [EmotionChange] {
-        let emotionItems = items.filter { $0.type == "emotion" && $0.emotionType != nil }
-            .sorted { $0.timestamp < $1.timestamp }
-        
-        var changes: [EmotionChange] = []
-        
-        for i in 0..<emotionItems.count {
-            if i > 0 {
-                if let currentEmotion = emotionItems[i].emotionType,
-                   let previousEmotion = emotionItems[i-1].emotionType,
-                   currentEmotion != previousEmotion {
-                    
-                    changes.append(EmotionChange(
-                        date: emotionItems[i].timestamp,
-                        fromEmotion: previousEmotion,
-                        toEmotion: currentEmotion,
-                        timeGap: emotionItems[i].timestamp.timeIntervalSince(emotionItems[i-1].timestamp)
-                    ))
-                }
-            }
-        }
-        
-        return changes
-    }
-    
-    // 找出情绪模式
-    func findEmotionPatterns(items: [RecordItem]) -> [EmotionPattern] {
-        let emotionItems = items.filter { $0.type == "emotion" && $0.emotionType != nil }
-        var patterns: [String: Int] = [:]
-        
-        // 简单模式：统计每种情绪的频率
-        for item in emotionItems {
-            if let emotion = item.emotionType {
-                patterns[emotion, default: 0] += 1
-            }
-        }
-        
-        return patterns.map { EmotionPattern(emotion: $0.key, frequency: $0.value) }
-            .sorted { $0.frequency > $1.frequency }
-    }
-    
     // 计算时间频率
     private func calculateFrequency(for items: [RecordItem], timeframe: TimeFrameOption) -> [DateFrequency] {
         let calendar = Calendar.current
@@ -100,18 +58,4 @@ struct DateFrequency: Identifiable {
     var id = UUID()
     var date: Date
     var count: Int
-}
-
-struct EmotionChange: Identifiable {
-    var id = UUID()
-    var date: Date
-    var fromEmotion: String
-    var toEmotion: String
-    var timeGap: TimeInterval // 情绪变化之间的间隔（秒）
-}
-
-struct EmotionPattern: Identifiable {
-    var id = UUID()
-    var emotion: String
-    var frequency: Int
 } 

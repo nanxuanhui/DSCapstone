@@ -64,7 +64,7 @@ struct ContentView: View {
                                 .foregroundColor(.blue)
                                 .shadow(color: .blue.opacity(0.4), radius: 10)
                             
-                            Text("健康监测与情绪分析")
+                            Text("健康监测应用")
                                 .font(.title)
                                 .foregroundColor(.gray)
                         }
@@ -105,14 +105,14 @@ struct ContentView: View {
                             showDetailView(AnyView(FallDetectionView()))
                         }
                         
-                        SpaceActionButton(title: "语音分析", icon: "waveform", color: .blue) {
+                        SpaceActionButton(title: "查看记录", icon: "clock.fill", color: .orange) {
                             selectedTab = 1
-                            showDetailView(AnyView(EmotionDetectionView()))
+                            showDetailView(AnyView(HistoryView(items: items, deleteItems: deleteItems, addItem: addItem)))
                         }
                         
-                        SpaceActionButton(title: "查看记录", icon: "clock.fill", color: .orange) {
+                        SpaceActionButton(title: "设置", icon: "gearshape.fill", color: .green) {
                             selectedTab = 2
-                            showDetailView(AnyView(HistoryView(items: items, deleteItems: deleteItems, addItem: addItem)))
+                            showDetailView(AnyView(SettingsView()))
                         }
                     }
                     .padding(.vertical, 20)
@@ -198,7 +198,7 @@ struct ContentView: View {
                 }
                 .onEnded { value in
                     // 计算最近的目标角度以对齐到最近的选项
-                    let cardCount = 4
+                    let cardCount = 3
                     let segmentAngle = 360.0 / Double(cardCount)
                     let targetAngle = round(orbitalAngle / segmentAngle) * segmentAngle
                     
@@ -232,8 +232,8 @@ struct ContentView: View {
                 .blur(radius: 2)
             
             // 放置菜单项
-            ForEach(0..<4) { index in
-                let baseAngle = 90.0 * Double(index)
+            ForEach(0..<3) { index in
+                let baseAngle = 120.0 * Double(index)
                 let adjustedAngle = baseAngle + orbitalAngle
                 let radians = adjustedAngle * .pi / 180.0
                 
@@ -654,12 +654,11 @@ struct ContentView: View {
     }
     
     // 菜单数据
-    private var menuTitles = ["摔倒检测", "情绪分析", "历史记录", "设置"]
-    private var menuIcons = ["figure.fall.circle.fill", "heart.text.square.fill", "clock.fill", "gearshape.fill"]
-    private var menuColors: [Color] = [.red, .blue, .green, .orange]
+    private var menuTitles = ["摔倒检测", "历史记录", "设置"]
+    private var menuIcons = ["figure.fall.circle.fill", "clock.fill", "gearshape.fill"]
+    private var menuColors: [Color] = [.red, .green, .orange]
     private var menuDescriptions = [
         "实时监测身体状态，检测意外跌倒",
-        "分析语音和文字中的情绪变化",
         "查看历史记录和数据统计分析",
         "自定义应用功能和通知设置"
     ]
@@ -668,7 +667,6 @@ struct ContentView: View {
     private var detailViews: [AnyView] {
         [
             AnyView(FallDetectionView()),
-            AnyView(EmotionDetectionView()),
             AnyView(HistoryView(items: items, deleteItems: deleteItems, addItem: addItem)),
             AnyView(SettingsView())
         ]
@@ -686,10 +684,8 @@ struct ContentView: View {
         case 0:
             showDetailView(AnyView(FallDetectionView()))
         case 1:
-            showDetailView(AnyView(EmotionDetectionView()))
-        case 2:
             showDetailView(AnyView(HistoryView(items: items, deleteItems: deleteItems, addItem: addItem)))
-        case 3:
+        case 2:
             showDetailView(AnyView(SettingsView()))
         default:
             break
@@ -721,22 +717,15 @@ struct ContentView: View {
                     }
                     .id("fallDetection")
                 
-                EmotionDetectionView()
-                    .tag(1)
-                    .tabItem {
-                        Label("情绪分析", systemImage: "heart.text.square.fill")
-                    }
-                    .id("emotionDetection")
-                
                 HistoryView(items: items, deleteItems: deleteItems, addItem: addItem)
-                    .tag(2)
+                    .tag(1)
                     .tabItem {
                         Label("历史记录", systemImage: "clock.fill")
                     }
                     .id("history")
                 
                 SettingsView()
-                    .tag(3)
+                    .tag(2)
                     .tabItem {
                         Label("设置", systemImage: "gearshape.fill")
                     }
@@ -749,11 +738,6 @@ struct ContentView: View {
                 FallDetectionView()
                     .tabItem {
                         Label("摔倒检测", systemImage: "camera.fill")
-                    }
-                
-                EmotionDetectionView()
-                    .tabItem {
-                        Label("情绪分析", systemImage: "heart.text.square.fill")
                     }
                 
                 HistoryView(items: items, deleteItems: deleteItems, addItem: addItem)

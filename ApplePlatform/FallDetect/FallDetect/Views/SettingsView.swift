@@ -218,8 +218,6 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("摔倒检测存储空间: 24.5 MB")
                             .dynamicFontSize(style: .body)
-                        Text("情绪分析数据存储: 12.8 MB")
-                            .dynamicFontSize(style: .body)
                         Text("其他缓存文件: 5.2 MB")
                             .dynamicFontSize(style: .body)
                     }
@@ -363,7 +361,6 @@ struct SettingsView: View {
                 // 应用数据
                 Section(header: Text("应用数据").dynamicFontSize(style: .footnote)) {
                     Text("摔倒检测存储空间: 24.5 MB")
-                    Text("情绪分析数据存储: 12.8 MB")
                     Text("其他缓存文件: 5.2 MB")
                     Button("清除缓存") {
                         // 清除缓存操作

@@ -43,7 +43,6 @@ struct HistoryView: View {
                 Picker("筛选", selection: $selectedFilter) {
                     Text("全部").tag(HistoryFilter.all)
                     Text("摔倒事件").tag(HistoryFilter.fallOnly)
-                    Text("情绪分析").tag(HistoryFilter.emotionOnly)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
@@ -107,12 +106,12 @@ struct HistoryView: View {
                 Button("取消", role: .cancel) {}
                 Button("删除", role: .destructive) {
                     DatabaseManager.shared.deleteAllRecords(
-                        type: selectedFilter == .all ? nil : (selectedFilter == .fallOnly ? "fall" : "emotion"),
+                        type: selectedFilter == .all ? nil : "fall",
                         in: modelContext
                     )
                 }
             } message: {
-                Text("确定要删除所有\(selectedFilter == .all ? "" : (selectedFilter == .fallOnly ? "摔倒检测" : "情绪分析"))记录吗？此操作无法撤销。")
+                Text("确定要删除所有\(selectedFilter == .all ? "" : "摔倒检测")记录吗？此操作无法撤销。")
             }
             .sheet(isPresented: $showingStatsView) {
                 StatsView(modelContext: modelContext)
@@ -148,19 +147,6 @@ struct HistoryView: View {
                     HStack {
                         Image(systemName: "figure.fall")
                         Text("摔倒记录")
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(10)
-                }
-                
-                Button(action: {
-                    // 显示情绪记录
-                }) {
-                    HStack {
-                        Image(systemName: "heart.text.square")
-                        Text("情绪记录")
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
@@ -235,14 +221,12 @@ struct HistoryView: View {
             return items
         case .fallOnly:
             return items.filter { $0.type == "fall" }
-        case .emotionOnly:
-            return items.filter { $0.type == "emotion" }
         }
     }
 }
 
 enum HistoryFilter {
-    case all, fallOnly, emotionOnly
+    case all, fallOnly
 }
 
 struct HistoryItemRow: View {
@@ -253,17 +237,17 @@ struct HistoryItemRow: View {
             // 类型图标
             ZStack {
                 Circle()
-                    .fill(item.type == "fall" ? Color.red.opacity(0.2) : Color.blue.opacity(0.2))
+                    .fill(Color.red.opacity(0.2))
                     .frame(width: 50, height: 50)
                 
-                Image(systemName: item.type == "fall" ? "figure.fall" : "heart.text.square")
+                Image(systemName: "figure.fall")
                     .font(.system(size: 20))
-                    .foregroundColor(item.type == "fall" ? .red : .blue)
+                    .foregroundColor(.red)
             }
             
             // 内容
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.type == "fall" ? "摔倒事件" : "情绪分析")
+                Text("摔倒事件")
                     .font(.headline)
                 
                 Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
@@ -280,8 +264,8 @@ struct HistoryItemRow: View {
             
             Spacer()
             
-            // 严重程度指示器（仅用于摔倒事件）
-            if item.type == "fall", let confidenceScore = item.confidenceScore {
+            // 严重程度指示器
+            if let confidenceScore = item.confidenceScore {
                 SeverityIndicator(score: confidenceScore)
             }
         }
@@ -333,7 +317,7 @@ struct HistoryDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 // 头部
                 HStack {
-                    Text(item.type == "fall" ? "摔倒事件详情" : "情绪分析详情")
+                    Text("摔倒事件详情")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
@@ -350,13 +334,7 @@ struct HistoryDetailView: View {
                     .padding(.horizontal)
                 
                 // 详情内容
-                Group {
-                    if item.type == "fall" {
-                        FallDetailContent(item: item)
-                    } else {
-                        EmotionDetailContent(item: item)
-                    }
-                }
+                FallDetailContent(item: item)
                 .padding()
                 
                 Spacer()
@@ -417,90 +395,13 @@ struct FallDetailContent: View {
     }
 }
 
-struct EmotionDetailContent: View {
-    let item: RecordItem
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // 情绪结果
-            if let emotionType = item.emotionType {
-                GroupBox {
-                    HStack(spacing: 20) {
-                        EmotionIcon(emotion: emotionType)
-                        
-                        VStack(alignment: .leading) {
-                            Text("检测到的情绪")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            
-                            Text(emotionType)
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(emotionColor(emotionType))
-                        }
-                        
-                        Spacer()
-                        
-                        if let confidenceScore = item.confidenceScore {
-                            Text("\(Int(confidenceScore * 100))%")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding()
-                }
-            }
-            
-            // 分析内容
-            GroupBox(label: Text("分析内容").font(.headline)) {
-                if let fullText = item.fullText {
-                    Text(fullText)
-                        .padding()
-                } else if let details = item.details {
-                    Text(details)
-                        .padding()
-                } else {
-                    Text("暂无分析内容")
-                        .foregroundColor(.gray)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding()
-                }
-            }
-            
-            // 其他信息
-            GroupBox(label: Text("分析信息").font(.headline)) {
-                VStack(alignment: .leading, spacing: 10) {
-                    InfoRow(title: "分析时间", value: item.timestamp.formatted(date: .numeric, time: .standard))
-                    InfoRow(title: "分析类型", value: "文本分析")
-                }
-                .padding(.vertical)
-            }
-        }
-    }
-    
-    func emotionColor(_ emotion: String) -> Color {
-        switch emotion {
-        case "开心": return .green
-        case "悲伤": return .blue
-        case "愤怒": return .red
-        case "焦虑": return .orange
-        case "恐惧": return .purple
-        case "惊讶": return .yellow
-        case "中性": return .gray
-        default: return .gray
-        }
-    }
-}
-
 struct StatsSummaryView: View {
     var modelContext: ModelContext
-    @State private var stats = (totalFall: 0, totalEmotion: 0, lastWeekFall: 0, lastWeekEmotion: 0)
+    @State private var stats = (totalFall: 0, lastWeekFall: 0)
     
     var body: some View {
         HStack {
             StatBox(title: "摔倒事件", count: stats.totalFall, recent: stats.lastWeekFall, iconName: "figure.fall", color: .red)
-            StatBox(title: "情绪分析", count: stats.totalEmotion, recent: stats.lastWeekEmotion, iconName: "heart.text.square", color: .blue)
         }
         .onAppear {
             stats = DatabaseManager.shared.getStatistics(in: modelContext)
@@ -584,23 +485,9 @@ struct StatsView: View {
                                             .foregroundColor(.red)
                                     }
                                 }
-                                
-                                BarMark(
-                                    x: .value("日期", item.date),
-                                    y: .value("数量", item.emotion)
-                                )
-                                .foregroundStyle(Color.blue)
-                                .annotation(position: .top) {
-                                    if item.emotion > 0 {
-                                        Text("\(item.emotion)")
-                                            .font(.caption)
-                                            .foregroundColor(.blue)
-                                    }
-                                }
                             }
                             .chartForegroundStyleScale([
-                                "摔倒": .red,
-                                "情绪": .blue
+                                "摔倒": .red
                             ])
                             .chartLegend(position: .bottom)
                             .frame(height: 200)
@@ -608,37 +495,6 @@ struct StatsView: View {
                         }
                     }
                     .padding(.horizontal)
-                    
-                    // 情绪分布图表
-                    if hasEmotionRecords {
-                        GroupBox("情绪分布") {
-                            if emotionDistribution.isEmpty {
-                                Text("没有情绪数据")
-                                    .foregroundColor(.gray)
-                                    .frame(height: 200)
-                                    .frame(maxWidth: .infinity)
-                            } else {
-                                Chart(emotionDistribution, id: \.emotion) { item in
-                                    SectorMark(
-                                        angle: .value("数量", item.count),
-                                        innerRadius: .ratio(0.5),
-                                        angularInset: 1
-                                    )
-                                    .foregroundStyle(by: .value("情绪", item.emotion))
-                                    .annotation(position: .overlay) {
-                                        Text("\(item.count)")
-                                            .font(.caption)
-                                            .foregroundColor(.white)
-                                            .fontWeight(.bold)
-                                    }
-                                }
-                                .chartLegend(position: .bottom)
-                                .frame(height: 200)
-                                .padding()
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
                     
                     // 摔倒严重程度分布
                     if hasFallRecords {
@@ -696,10 +552,6 @@ struct StatsView: View {
         return items.contains { $0.type == "fall" }
     }
     
-    private var hasEmotionRecords: Bool {
-        return items.contains { $0.type == "emotion" }
-    }
-    
     private func loadData() {
         let allItems = DatabaseManager.shared.fetchRecords(type: nil, in: modelContext)
         
@@ -725,11 +577,11 @@ struct StatsView: View {
         items = filteredItems
     }
     
-    private var chartData: [(date: Date, fall: Int, emotion: Int)] {
+    private var chartData: [(date: Date, fall: Int)] {
         let calendar = Calendar.current
         let now = Date()
         
-        var data: [(date: Date, fall: Int, emotion: Int)] = []
+        var data: [(date: Date, fall: Int)] = []
         
         let numberOfDays: Int
         
@@ -760,9 +612,8 @@ struct StatsView: View {
                 let nextMonth = calendar.date(byAdding: .month, value: 1, to: startOfMonth)!
                 
                 let fallCount = items.filter { $0.type == "fall" && $0.timestamp >= startOfMonth && $0.timestamp < nextMonth }.count
-                let emotionCount = items.filter { $0.type == "emotion" && $0.timestamp >= startOfMonth && $0.timestamp < nextMonth }.count
                 
-                data.append((date: startOfMonth, fall: fallCount, emotion: emotionCount))
+                data.append((date: startOfMonth, fall: fallCount))
             }
         } else {
             // 按天聚合
@@ -772,27 +623,12 @@ struct StatsView: View {
                 let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
                 
                 let fallCount = items.filter { $0.type == "fall" && $0.timestamp >= startOfDay && $0.timestamp < endOfDay }.count
-                let emotionCount = items.filter { $0.type == "emotion" && $0.timestamp >= startOfDay && $0.timestamp < endOfDay }.count
                 
-                data.append((date: startOfDay, fall: fallCount, emotion: emotionCount))
+                data.append((date: startOfDay, fall: fallCount))
             }
         }
         
         return data.reversed()
-    }
-    
-    private var emotionDistribution: [(emotion: String, count: Int)] {
-        let emotionItems = items.filter { $0.type == "emotion" && $0.emotionType != nil }
-        var emotionCounts: [String: Int] = [:]
-        
-        for item in emotionItems {
-            if let emotion = item.emotionType {
-                emotionCounts[emotion, default: 0] += 1
-            }
-        }
-        
-        return emotionCounts.map { (emotion: $0.key, count: $0.value) }
-            .sorted { $0.count > $1.count }
     }
     
     private var fallSeverityDistribution: [(severity: String, count: Int)] {
@@ -837,10 +673,10 @@ struct RecordCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Circle()
-                    .fill(item.type == "fall" ? Color.red : Color.blue)
+                    .fill(Color.red)
                     .frame(width: 12, height: 12)
                 
-                Text(item.type == "fall" ? "摔倒记录" : "情绪记录")
+                Text("摔倒记录")
                     .font(.headline)
                 
                 Spacer()
@@ -853,11 +689,7 @@ struct RecordCard: View {
             Divider()
             
             // 显示详细内容
-            if item.type == "fall" {
-                fallRecordDetails
-            } else {
-                emotionRecordDetails
-            }
+            fallRecordDetails
         }
         .padding()
         .background(
@@ -889,28 +721,6 @@ struct RecordCard: View {
         }
     }
     
-    var emotionRecordDetails: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("情绪类型:")
-                    .foregroundColor(.secondary)
-                Text(item.emotionType ?? "未知")
-                    .bold()
-            }
-            
-            HStack {
-                Text("置信度:")
-                    .foregroundColor(.secondary)
-                Text("\(Int((item.confidenceScore ?? 0.0) * 100))%")
-            }
-            
-            if let fullText = item.fullText {
-                Text("内容: \(fullText)")
-                    .lineLimit(2)
-            }
-        }
-    }
-    
     private func getFallSeverity() -> String {
         if let severity = item.fallSeverity {
             return severity
@@ -924,56 +734,5 @@ struct RecordCard: View {
             }
         }
         return "未知"
-    }
-}
-
-// 情绪图标组件
-struct EmotionIcon: View {
-    let emotion: String
-    
-    var body: some View {
-        Image(systemName: iconName)
-            .font(.system(size: 22))
-            .foregroundColor(iconColor)
-    }
-    
-    // 根据情绪类型返回图标名称
-    var iconName: String {
-        switch emotion.lowercased() {
-        case "高兴":
-            return "face.smiling"
-        case "悲伤":
-            return "cloud.rain"
-        case "愤怒":
-            return "flame"
-        case "焦虑":
-            return "waveform.path.ecg"
-        case "平静":
-            return "leaf"
-        case "惊讶":
-            return "exclamationmark.circle"
-        default:
-            return "questionmark.circle"
-        }
-    }
-    
-    // 根据情绪类型返回颜色
-    var iconColor: Color {
-        switch emotion.lowercased() {
-        case "高兴":
-            return .green
-        case "悲伤":
-            return .blue
-        case "愤怒":
-            return .red
-        case "焦虑":
-            return .orange
-        case "平静":
-            return .cyan
-        case "惊讶":
-            return .purple
-        default:
-            return .gray
-        }
     }
 } 

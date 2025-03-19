@@ -45,34 +45,6 @@ class DatabaseManager {
         }
     }
     
-    // 保存情绪分析记录
-    func saveEmotionAnalysisRecord(
-        in modelContext: ModelContext,
-        emotionType: String,
-        confidenceScore: Double,
-        fullText: String,
-        audioData: Data? = nil
-    ) {
-        let emotionItem = RecordItem(
-            timestamp: Date(),
-            type: "emotion",
-            details: "检测到\(emotionType)情绪",
-            confidenceScore: confidenceScore,
-            emotionType: emotionType,
-            fullText: fullText,
-            audioData: audioData
-        )
-        
-        modelContext.insert(emotionItem)
-        
-        do {
-            try modelContext.save()
-            print("情绪分析记录保存成功")
-        } catch {
-            print("保存情绪分析记录失败: \(error)")
-        }
-    }
-    
     // 根据类型获取所有记录
     func fetchRecords(type: String?, in modelContext: ModelContext) -> [RecordItem] {
         let descriptor = FetchDescriptor<RecordItem>(
@@ -117,18 +89,16 @@ class DatabaseManager {
     }
     
     // 获取统计数据
-    func getStatistics(in modelContext: ModelContext) -> (totalFall: Int, totalEmotion: Int, lastWeekFall: Int, lastWeekEmotion: Int) {
+    func getStatistics(in modelContext: ModelContext) -> (totalFall: Int, lastWeekFall: Int) {
         let allRecords = fetchRecords(type: nil, in: modelContext)
         
         let fallRecords = allRecords.filter { $0.type == "fall" }
-        let emotionRecords = allRecords.filter { $0.type == "emotion" }
         
         let calendar = Calendar.current
         let oneWeekAgo = calendar.date(byAdding: .weekOfYear, value: -1, to: Date())!
         
         let lastWeekFall = fallRecords.filter { $0.timestamp >= oneWeekAgo }.count
-        let lastWeekEmotion = emotionRecords.filter { $0.timestamp >= oneWeekAgo }.count
         
-        return (fallRecords.count, emotionRecords.count, lastWeekFall, lastWeekEmotion)
+        return (fallRecords.count, lastWeekFall)
     }
 } 
