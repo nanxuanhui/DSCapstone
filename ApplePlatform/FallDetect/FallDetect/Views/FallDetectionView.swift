@@ -22,11 +22,31 @@ struct FallDetectionView: View {
                 CameraPreview(session: viewModel.session)
                     .ignoresSafeArea()
                 
+                // 姿态检测覆盖层
+                if viewModel.showPoseOverlay {
+                    GeometryReader { geometry in
+                        PoseOverlayView(
+                            pose: viewModel.currentPose,
+                            viewSize: geometry.size
+                        )
+                    }
+                    .allowsHitTesting(false) // 允许点击穿透
+                }
+                
                 // 顶部状态栏
                 VStack {
                     HStack {
-                        // 这里可能有其他按钮，如闪光灯控制等
-                        // 但应该删除摄像头切换按钮
+                        // 切换姿态覆盖层按钮
+                        Button(action: {
+                            viewModel.togglePoseOverlay()
+                        }) {
+                            Image(systemName: viewModel.showPoseOverlay ? "figure.walk.circle.fill" : "figure.walk.circle")
+                                .font(.system(size: 24))
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Color.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
                         
                         Spacer()
                         
@@ -153,6 +173,22 @@ struct FallDetectionView: View {
                             .cornerRadius(16)
                             
                             Spacer()
+                        }
+                        
+                        // 姿态覆盖层切换按钮
+                        Button(action: {
+                            viewModel.togglePoseOverlay()
+                        }) {
+                            Label(
+                                viewModel.showPoseOverlay ? "隐藏姿态检测" : "显示姿态检测",
+                                systemImage: viewModel.showPoseOverlay ? "figure.walk.circle.fill" : "figure.walk.circle"
+                            )
+                            .font(.headline)
+                            .padding()
+                            .frame(width: 200)
+                            .background(Color.blue.opacity(0.7))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
                         }
                         
                         Button(action: {
